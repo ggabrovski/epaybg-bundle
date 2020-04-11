@@ -40,7 +40,7 @@ class EpayPayloadData
 
         $errors = $validator->validate($this);
 
-        if(count($errors) > 0) {
+        if (count($errors) > 0) {
             throw new NotValidPayloadDataException($errors);
         }
     }

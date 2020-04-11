@@ -16,7 +16,6 @@ use Symfony\Component\Form\FormInterface;
 use Symfony\Component\Form\Forms;
 use Symfony\Component\Form\FormView;
 use Symfony\Component\HttpClient\HttpClient;
-use Symfony\Component\HttpFoundation\Request;
 
 class EpayManager implements EpayManagerInterface
 {
@@ -56,6 +55,13 @@ class EpayManager implements EpayManagerInterface
         return $this->createForm($paymentData, $returnUrl, $cancelUrl, self::PAYMENT_TYPE_CREDIT_CARD);
     }
 
+    /**
+     * @throws EasypayGetCodeException
+     * @throws \Symfony\Contracts\HttpClient\Exception\ClientExceptionInterface
+     * @throws \Symfony\Contracts\HttpClient\Exception\RedirectionExceptionInterface
+     * @throws \Symfony\Contracts\HttpClient\Exception\ServerExceptionInterface
+     * @throws \Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface
+     */
     public function getEasypayCode(EpayPayloadData $paymentData): string
     {
         $payload = $paymentData->toArray();
@@ -73,7 +79,7 @@ class EpayManager implements EpayManagerInterface
         ]);
 
         $content = $response->getContent();
-        if(preg_match('/^IDN=(.+)/', $content, $match)) {
+        if (preg_match('/^IDN=(.+)/', $content, $match)) {
             $code = $match[1];
             if ($this->eventDispatcher) {
                 $event = new EasypayCodeCreatedEvent($paymentData, $code);
@@ -90,13 +96,18 @@ class EpayManager implements EpayManagerInterface
         return $checksum == $this->getChecksum($encoded);
     }
 
+    /**
+     * @throws NotEncodedOrChecksumException
+     * @throws NotValidChecksumException
+     * @throws NotificationNoDataException
+     */
     public function decodeRequest(string $encoded, string $checksum): array
     {
-        if(empty($encoded) || empty($checksum)) {
+        if (empty($encoded) || empty($checksum)) {
             throw new NotEncodedOrChecksumException();
         }
 
-        if(!$this->isValidRequest($encoded, $checksum)) {
+        if (!$this->isValidRequest($encoded, $checksum)) {
             throw new NotValidChecksumException();
         }
 
@@ -124,7 +135,7 @@ class EpayManager implements EpayManagerInterface
             }
         }
 
-        if(count($info_data) <= 0) {
+        if (count($info_data) <= 0) {
             throw new NotificationNoDataException();
         }
 

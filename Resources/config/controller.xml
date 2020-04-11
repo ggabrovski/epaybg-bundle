@@ -9,7 +9,6 @@
             <argument type="service" id="otobul_epaybg.epay_manager" />
             <argument type="service" id="request_stack" on-invalid="null" />
             <argument type="service" id="event_dispatcher" on-invalid="null" />
-            <argument type="service" id="logger" on-invalid="null" />
         </service>
     </services>
 
