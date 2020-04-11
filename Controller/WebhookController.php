@@ -45,11 +45,12 @@ class WebhookController
             return new Response('The request is not valid!', 400);
         }
 
+        $responseContent = implode("\n", $lines);
         if ($this->eventDispatcher) {
-            $event = new NotificationResponseEvent($content);
+            $event = new NotificationResponseEvent($responseContent);
             $this->eventDispatcher->dispatch($event, OtobulEpaybgEvents::NOTIFICATION_RESPONSE);
         }
 
-        return new Response(implode("\n", $lines));
+        return new Response($responseContent);
     }
 }
