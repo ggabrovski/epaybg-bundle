@@ -21,7 +21,7 @@ class InvoiceNotificationReceivedEvent extends Event
     private $bcode;
     private $responseStatus = self::RESPONSE_STATUS_OK;
 
-    public function __construct(int $invoice, string $status, ?int $pay_date, ?int $stan, ?string $bcode)
+    public function __construct(int $invoice, string $status, ?\DateTime $pay_date, ?int $stan, ?string $bcode)
     {
         $this->invoice = $invoice;
         $this->status = $status;
@@ -40,7 +40,7 @@ class InvoiceNotificationReceivedEvent extends Event
         return $this->status;
     }
 
-    public function getPayDate(): ?int
+    public function getPayDate(): ?\DateTime
     {
         return $this->pay_date;
     }

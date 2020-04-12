@@ -119,14 +119,18 @@ class EpayManager implements EpayManagerInterface
             if (preg_match("/^INVOICE=(\d+):STATUS=(PAID|DENIED|EXPIRED)(:PAY_TIME=(\d+):STAN=(\d+):BCODE=([0-9a-zA-Z]+))?$/", $line, $regs)) {
                 $invoice  = $regs[1];
                 $status   = $regs[2];
-                $pay_date = $regs[4] ?? null; # XXX if PAID
-                $stan     = $regs[5] ?? null; # XXX if PAID
-                $bcode    = $regs[6] ?? null; # XXX if PAID
+                $pay_date = $regs[4] ?? null; # XXX if PAID Date/hour/sec of the payment
+                $stan     = $regs[5] ?? null; # XXX if PAID Transaction number
+                $bcode    = $regs[6] ?? null; # XXX if PAID Authorization code
 
                 $responseStatus = InvoiceNotificationReceivedEvent::RESPONSE_STATUS_ERROR;
                 # XXX process $invoice, $status, $pay_date, $stan, $bcode here
                 if ($this->eventDispatcher) {
-                    $event = new InvoiceNotificationReceivedEvent($invoice, $status, $pay_date, $stan, $bcode);
+                    $payDate = !empty($pay_date) ? \DateTime::createFromFormat('YmdHis', $pay_date) : null;
+                    if(!$payDate instanceof \DateTime) {
+                        $payDate = null;
+                    }
+                    $event = new InvoiceNotificationReceivedEvent($invoice, $status, $payDate, $stan, $bcode);
                     $this->eventDispatcher->dispatch($event, OtobulEpaybgEvents::INVOICE_NOTIFICATION_RECEIVED);
                     $responseStatus = $event->getResponseStatus();
                 }

@@ -15,6 +15,7 @@ in your `config/bundles.php` file and configure the bundle.
 
 ## 2. Configuration
 
+### 2.1 Configure the bundle
 Configure the bundle in **packages/otobul_epaybg.yaml**
 
 ```yaml
@@ -37,6 +38,15 @@ php bin/console config:dump otobul_epaybg
 To work properly you need also to configure dev env files. If you don`t have access to ePay.bg demo system you can visit 
 https://demo.epay.bg/
 and make registration to get demo merchant number and secret keys. 
+
+### 2.2 Configure webhook notification
+To use webhook notification you need to add webhook notification route to your config. Configure the route in **config/routes/otobul_epaybg.yaml**
+```yaml
+otobul_epaybg:
+    resource: '@OtobulEpaybgBundle/Resources/config/routes.xml'
+    prefix: /webhook/epaybg
+```
+The new notification URL will be something like: `https://your-domain.com/webhook/epaybg/`, add the notification URL in your ePay.bg account.
 
 
 ## 3. Usage
@@ -67,7 +77,7 @@ Advanced configuration of **web_login** "Pay" button allow you to configure othe
         amount: 100,
         returnUrl: url('your_payment_success_route'),
         cancelUrl: url('your_payment_cancel_route'),
-        expDate: expDate,
+        expDate: 'now'|date_modify('+7 day'),
         currency: 'EUR',
         description: 'Extra description max to 100 symbols',
         encoding: 'utf-8',
@@ -135,7 +145,7 @@ class PaymentController extends AbstractController
 }
 ```
 
-#### 3.2.1 Generate "Pay" button for WEB_LOGIN form in controller
+#### 3.2.2 Generate "Pay" button for WEB_LOGIN form in controller
 
 Example usages of EpayManager service in controller to generate "Pay" button form.
 
@@ -171,17 +181,7 @@ class PaymentController extends AbstractController
 
 To generate **CREDIT_CARD** form use `createCreditCardForm` function.
 
-### 3.3 Webhook notification
-To use webhook notification you need to add webhook notification route to your config. Configure the route in **config/routes/otobul_epaybg.yaml**
-```yaml
-otobul_epaybg:
-    resource: '@OtobulEpaybgBundle/Resources/config/routes.xml'
-    prefix: /webhook/epaybg
-```
-The new notification URL will be something like: `https://your-domain.com/webhook/epaybg/`, add the notification URL in your ePay.bg account.
-
-
-### 3.4 Events
+### 3.3 Events
 
 - **NOTIFICATION_RECEIVED**: Called directly after the webhook notification is received. Listeners have the opportunity to get the raw content.
 - **NOTIFICATION_ERROR**: Called if webhook notification has not valid checksum or data. Listeners have the opportunity to get the error message.
@@ -189,13 +189,64 @@ The new notification URL will be something like: `https://your-domain.com/webhoo
 - **INVOICE_NOTIFICATION_RECEIVED**: Called directly after the invoice notification is received. Listeners have the opportunity to process the invoice data.
 - **EASYPAY_CODE_CREATED**: Called directly after the Easypay code is received. Listeners have the opportunity to get the code and payment data.
 
-Example event subscriber:
 
-```
+Example event subscriber for **INVOICE_NOTIFICATION_RECEIVED** this event is called directly after the invoice notification is received. Listeners have the opportunity to process the invoice data.
+
+```php
 // src/EventSubscriber/EpayInvoiceNotificationSubscriber.php
 
 namespace App\EventSubscriber;
 
+use Doctrine\ORM\EntityManagerInterface;
+use Otobul\EpaybgBundle\Event\OtobulEpaybgEvents;
+use Otobul\EpaybgBundle\Event\InvoiceNotificationReceivedEvent;
+use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+
+class EpayInvoiceNotificationSubscriber implements EventSubscriberInterface
+{
+    public function __construct(EntityManagerInterface $entityManager)
+    {
+        $this->entityManager = $entityManager;
+    }
+
+    public static function getSubscribedEvents()
+    {
+        return [
+            OtobulEpaybgEvents::INVOICE_NOTIFICATION_RECEIVED => 'epayInvoiceNotification',
+        ];
+    }
+
+    public function epayInvoiceNotification(InvoiceNotificationReceivedEvent $event)
+    {
+        // Example logic to find some entity related to this invoice.
+        $order = $this->entityManager->getRepository(Order::class)->find($event->getInvoice());
+        if (!$order) {
+            // If invoice cannot be found. Sending back NO, so ePay.bg system stops sending notification about the invoice.
+            $event->setResponseStatusNo();
+            return;
+        }
+
+        // process order state below
+        if($event->isPaid()) {
+            // process PAID order here
+        }else {
+            // process DENIED or EXPIRED order here
+        }
+
+        // Sending back OK, so ePay.bg system stops sending notification about the invoice.
+        $event->setResponseStatusOk();
+    }
+}
+```
+
+Example for advanced event subscriber.
+
+```php
+// src/EventSubscriber/EpayInvoiceNotificationSubscriber.php
+
+namespace App\EventSubscriber;
+
+use Otobul\EpaybgBundle\Event\EasypayCodeCreatedEvent;
 use Otobul\EpaybgBundle\Event\NotificationErrorEvent;
 use Otobul\EpaybgBundle\Event\NotificationReceivedEvent;
 use Otobul\EpaybgBundle\Event\NotificationResponseEvent;
@@ -220,6 +271,7 @@ class EpayInvoiceNotificationSubscriber implements EventSubscriberInterface
             OtobulEpaybgEvents::NOTIFICATION_ERROR => 'epayNotificationError',
             OtobulEpaybgEvents::NOTIFICATION_RESPONSE => 'epayNotificationResponse',
             OtobulEpaybgEvents::INVOICE_NOTIFICATION_RECEIVED => 'epayInvoiceNotification',
+            OtobulEpaybgEvents::EASYPAY_CODE_CREATED => 'epayEasypayCodeCreated',
         ];
     }
 
@@ -238,9 +290,69 @@ class EpayInvoiceNotificationSubscriber implements EventSubscriberInterface
         $this->logger->info('epayNotificationResponse: '. $event->getContent());
     }
 
+    public function epayEasypayCodeCreated(EasypayCodeCreatedEvent $event)
+    {
+        $this->logger->info('epayEasypayCodeCreated: code'. $event->getCode());
+        $this->logger->info('epayEasypayCodeCreated: paymentData:'. print_r($event->getPaymentData()->toArray(), 1));
+    }
+
     public function epayInvoiceNotification(InvoiceNotificationReceivedEvent $event)
     {
         $this->logger->info('epayInvoiceNotification: '. $event->getInvoice() .' isPaid: '. $event->isPaid());
+
+        // Event object has access to invoice notification details
+
+        /**
+         * Invoice number
+         * @var int $invoice
+         */
+        $invoice = $event->getInvoice();
+
+        /**
+         * Invoice status, can be PAID|DENIED|EXPIRED
+         * @var string $status
+         */
+        $status = $event->getStatus();
+
+        /**
+         * Payment date
+         * @var \DateTime $payDate
+         */
+        $payDate = $event->getPayDate();
+
+        /**
+         * Transaction number
+         * @var int $stan
+         */
+        $stan = $event->getStan();
+
+        /**
+         * Authorization code
+         * @var string $bcode
+         */
+        $bcode = $event->getBcode();
+
+        /*
+        // Your logic to find some entity related to this invoice. Example:
+
+        $order = $this->orderRepository->find($invoice);
+        if (!$order) {
+            // If invoice cannot be found. Sending back NO, so ePay.bg system stops sending notification about the invoice.
+            $event->setResponseStatusNo();
+            return;
+        }
+
+        process order state below
+        */
+
+        if($event->isPaid()) {
+            // process PAID order here
+        }else {
+            // process DENIED or EXPIRED order here
+        }
+
+        // Sending back OK, so ePay.bg system stops sending notification about the invoice.
+        $event->setResponseStatusOk();
     }
 }
 ```
