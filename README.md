@@ -16,9 +16,22 @@ in your `config/bundles.php` file and configure the bundle.
 ## 2. Configuration
 
 Configure the bundle in **packages/otobul_epaybg.yaml**
+
+```yaml
+otobul_epaybg:
+    # Identification number of the merchant
+    min: '%env(OTOBUL_EPAYBG_MIN)%'
+
+    # The secret word of the merchant
+    secret: '%env(OTOBUL_EPAYBG_SECRET)%'
+
+    # If true all requests will be sent to ePay.bg’s Demo System
+    isDemo: '%env(bool:OTOBUL_EPAYBG_IS_DEMO)%'
+```
+
 The default values can be listed with:
 
-```
+```console
 php bin/console config:dump otobul_epaybg
 ```
 To work properly you need also to configure dev env files. If you don`t have access to ePay.bg demo system you can visit 
@@ -37,7 +50,7 @@ This bundle provides:
 #### 3.1.1 Generate "Pay" button for WEB_LOGIN form
 
 To generate simple **web_login** "Pay" button in your template you can use `epayWebLoginForm` twig function. Example:
-```
+```twig
 {% include '@OtobulEpaybg/Form/web_login.html.twig' with {
     form: epayWebLoginForm({invoice: 1, amount: 100})
 } only %}
@@ -47,7 +60,7 @@ Required parameters:
 - **amount**: Total sum in BGN. This is the default currency.
 
 Advanced configuration of **web_login** "Pay" button allow you to configure other optional parameters:
-```
+```twig
 {% include '@OtobulEpaybg/Form/web_login.html.twig' with {
     form: epayWebLoginForm({
         invoice: 1,
@@ -73,7 +86,7 @@ Optional parameters:
 #### 3.1.2 Generate "Pay" button for CREDIT_CARD form 
 
 To generate simple **credit_card** "Pay" button in your template you can use `epayCreditCardForm` twig function. Example:
-```
+```twig
 {% include '@OtobulEpaybg/Form/web_login.html.twig' with {
     form: epayCreditCardForm({invoice: 1, amount: 100})
 } only %}
@@ -83,7 +96,7 @@ For advanced configuration you can use the same optional parameter from above.
 #### 3.1.3 Generate "Easypay code" in template
 
 To generate **Easypay code** in your template you can use `epayEasypayCode` twig function. Example:
-```
+```twig
 {{ epayEasypayCode({invoice: 1, amount: 100}) }}
 ```
 Please note that this will make HTTP request to Easypay server to retrieve the code. Use this careful! Recommended way is to generate the code in your controller and store it for later use. 
@@ -94,7 +107,9 @@ Please note that this will make HTTP request to Easypay server to retrieve the c
 
 Example usages of EpayManager service in controller to retrieve Easypay payment code.
 
-```
+```php
+// src/Controller/PaymentController.php
+
 namespace App\Controller;
 
 use Otobul\EpaybgBundle\Model\EpayPayloadData;
@@ -124,7 +139,9 @@ class PaymentController extends AbstractController
 
 Example usages of EpayManager service in controller to generate "Pay" button form.
 
-```
+```php
+// src/Controller/PaymentController.php
+
 namespace App\Controller;
 
 use Otobul\EpaybgBundle\Model\EpayPayloadData;
@@ -156,7 +173,7 @@ To generate **CREDIT_CARD** form use `createCreditCardForm` function.
 
 ### 3.3 Webhook notification
 To use webhook notification you need to add webhook notification route to your config. Configure the route in **config/routes/otobul_epaybg.yaml**
-```
+```yaml
 otobul_epaybg:
     resource: '@OtobulEpaybgBundle/Resources/config/routes.xml'
     prefix: /webhook/epaybg
@@ -175,6 +192,8 @@ The new notification URL will be something like: `https://your-domain.com/webhoo
 Example event subscriber:
 
 ```
+// src/EventSubscriber/EpayInvoiceNotificationSubscriber.php
+
 namespace App\EventSubscriber;
 
 use Otobul\EpaybgBundle\Event\NotificationErrorEvent;
