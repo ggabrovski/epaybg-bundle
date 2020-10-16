@@ -45,6 +45,7 @@ To use webhook notification you need to add webhook notification route to your c
 otobul_epaybg:
     resource: '@OtobulEpaybgBundle/Resources/config/routes.xml'
     prefix: /webhook/epaybg
+    methods: ['POST']
 ```
 The new notification URL will be something like: `https://your-domain.com/webhook/epaybg/`, add the notification URL in your ePay.bg account.
 
