@@ -41,7 +41,6 @@
             <constraint name="Length">
                 <option name="min">0</option>
                 <option name="max">100</option>
-                <option name="allowEmptyString">false</option>
             </constraint>
         </property>
 
