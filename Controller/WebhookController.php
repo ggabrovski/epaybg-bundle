@@ -25,7 +25,7 @@ class WebhookController
         $this->requestStack = $requestStack;
     }
 
-    public function index()
+    public function __invoke()
     {
         $request = $this->requestStack->getCurrentRequest();
         $content = $request->getContent();
