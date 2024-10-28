@@ -14,6 +14,7 @@ class EpayPayloadData
     private $currency;
     private $description;
     private $encoding;
+    private $lang;
 
     /**
      * PaymentData constructor.
@@ -23,9 +24,10 @@ class EpayPayloadData
      * @param string $currency
      * @param string|null $description
      * @param string $encoding
+     * @param string $lang
      * @throws NotValidPayloadDataException
      */
-    public function __construct(int $invoice, float $amount, \DateTime $expDate = null, string $currency=null, string $description=null, string $encoding=null)
+    public function __construct(int $invoice, float $amount, \DateTime $expDate = null, string $currency=null, string $description=null, string $encoding=null, string $lang=null)
     {
         $this->invoice = $invoice;
         $this->amount = $amount;
@@ -33,6 +35,7 @@ class EpayPayloadData
         $this->currency = $currency ?? 'BGN';
         $this->description = $description ?? '';
         $this->encoding = $encoding ?? 'utf-8';
+        $this->lang = $lang ?? 'bg';
 
         $validator = Validation::createValidatorBuilder()
             ->addXmlMapping(__DIR__ .'/../Resources/config/validation.xml')
@@ -59,8 +62,9 @@ class EpayPayloadData
         $currency = $properties['currency'] ?? null;
         $description = $properties['description'] ?? null;
         $encoding = $properties['encoding'] ?? null;
+        $lang = $properties['lang'] ?? null;
 
-        return new self($invoice, $amount, $expDate, $currency, $description, $encoding);
+        return new self($invoice, $amount, $expDate, $currency, $description, $encoding, $lang);
     }
 
     public function toArray(): array
@@ -72,6 +76,7 @@ class EpayPayloadData
             'EXP_TIME' => $this->getExpDate()->format('d.m.Y H:i'),
             'DESCR' => $this->getDescription(),
             'ENCODING' => $this->getEncoding(),
+            'LANG' => $this->getLang(),
         ];
     }
 
@@ -103,5 +108,10 @@ class EpayPayloadData
     public function getEncoding(): string
     {
         return $this->encoding;
+    }
+
+    public function getLang(): string
+    {
+        return $this->lang;
     }
 }

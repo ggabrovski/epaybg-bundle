@@ -9,7 +9,7 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 
 class EpayButtonType extends AbstractType
 {
-    public function buildForm(FormBuilderInterface $builder, array $options)
+    public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
             ->setMethod('POST')
@@ -24,11 +24,12 @@ class EpayButtonType extends AbstractType
      * This will remove formTypeName from the form
      * @return null
      */
-    public function getBlockPrefix() {
+    public function getBlockPrefix()
+    {
         return '';
     }
 
-    public function configureOptions(OptionsResolver $resolver)
+    public function configureOptions(OptionsResolver $resolver): void
     {
         $resolver->setDefaults([
             'data_class' => null,

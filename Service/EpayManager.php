@@ -159,7 +159,8 @@ class EpayManager implements EpayManagerInterface
             'ENCODED' => $encoded,
             'CHECKSUM' => $checksum,
             'URL_OK' => $returnUrl,
-            'URL_CANCEL' => $cancelUrl
+            'URL_CANCEL' => $cancelUrl,
+            'LANG' => $paymentData->getLang(),
         ];
 
         return Forms::createFormFactory()->create(EpayButtonType::class, null, [
@@ -175,7 +176,7 @@ class EpayManager implements EpayManagerInterface
 
     private function getEndpointEpay(): string
     {
-        return $this->isDemo ? 'https://demo.epay.bg/' : 'https://www.epay.bg/';
+        return $this->isDemo ? 'https://demo.epay.bg/en/' : 'https://www.epay.bg/en/';
     }
 
     public function getEncoded(array $payload): string
