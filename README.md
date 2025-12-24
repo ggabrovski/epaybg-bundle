@@ -43,7 +43,7 @@ and make registration to get demo merchant number and secret keys.
 To use webhook notification you need to add webhook notification route to your config. Configure the route in **config/routes/otobul_epaybg.yaml**
 ```yaml
 otobul_epaybg:
-    resource: '@OtobulEpaybgBundle/Resources/config/routes.xml'
+    resource: '@OtobulEpaybgBundle/Resources/config/routes.yaml'
     prefix: /webhook/epaybg
     methods: ['POST']
 ```
