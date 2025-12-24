@@ -3,17 +3,36 @@
 namespace Otobul\EpaybgBundle\Model;
 
 use Otobul\EpaybgBundle\Exception\NotValidPayloadDataException;
+use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\Validation;
 
 class EpayPayloadData
 {
-
+    #[Assert\NotBlank]
+    #[Assert\Type(type: 'integer')]
+    #[Assert\Range(min: 0)]
     private $invoice;
+
+    #[Assert\NotBlank]
+    #[Assert\Type(type: 'float')]
+    #[Assert\Range(min: 0)]
     private $amount;
+
+    #[Assert\NotBlank]
+    #[Assert\GreaterThanOrEqual('today')]
     private $expDate;
+
+    #[Assert\NotBlank]
+    #[Assert\Regex(pattern: '/\b(BGN|EUR|USD)\b/')]
     private $currency;
+
+    #[Assert\Length(min: 0, max: 100)]
     private $description;
+
+    #[Assert\NotBlank]
+    #[Assert\Regex(pattern: '/\b(utf-8|CP1251)\b/')]
     private $encoding;
+
     private $lang;
 
     /**
@@ -32,14 +51,12 @@ class EpayPayloadData
         $this->invoice = $invoice;
         $this->amount = $amount;
         $this->expDate = $expDate ?? new \DateTime('+7 days');
-        $this->currency = $currency ?? 'BGN';
+        $this->currency = $currency ?? 'EUR';
         $this->description = $description ?? '';
         $this->encoding = $encoding ?? 'utf-8';
         $this->lang = $lang ?? 'bg';
 
-        $validator = Validation::createValidatorBuilder()
-            ->addXmlMapping(__DIR__ .'/../Resources/config/validation.xml')
-            ->getValidator();
+        $validator = Validation::createValidator();
 
         $errors = $validator->validate($this);
 

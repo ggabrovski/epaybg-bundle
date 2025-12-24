@@ -1,0 +1,13 @@
+parameters:
+    otobul_epaybg.epay_manager.class: Otobul\EpaybgBundle\Service\EpayManager
+
+services:
+    otobul_epaybg.epay_manager:
+        class: '%otobul_epaybg.epay_manager.class%'
+        public: false
+        arguments:
+            - '@event_dispatcher'
+            - [] # filled in via a compiler pass
+
+    Otobul\EpaybgBundle\Service\EpayManagerInterface:
+        alias: otobul_epaybg.epay_manager

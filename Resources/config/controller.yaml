@@ -1,0 +1,8 @@
+services:
+    otobul_epaybg.controller.webhook_controller:
+        class: Otobul\EpaybgBundle\Controller\WebhookController
+        public: true
+        arguments:
+            - '@otobul_epaybg.epay_manager'
+            - '@request_stack'
+            - '@event_dispatcher'

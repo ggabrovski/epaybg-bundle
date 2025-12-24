@@ -1,0 +1,4 @@
+otobul_epaybg_webhook_index:
+    path: /
+    controller: otobul_epaybg.controller.webhook_controller
+    methods: [POST]

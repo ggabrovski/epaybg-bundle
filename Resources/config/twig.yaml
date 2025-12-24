@@ -1,0 +1,11 @@
+parameters:
+    otobul_epaybg.twig.extension.epay.class: Otobul\EpaybgBundle\Twig\Extension\EpayExtension
+
+services:
+    otobul_epaybg.twig.extension.epay:
+        class: '%otobul_epaybg.twig.extension.epay.class%'
+        public: false
+        arguments:
+            - '@otobul_epaybg.epay_manager'
+        tags:
+            - { name: twig.extension }
